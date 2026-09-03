@@ -3,7 +3,6 @@ const router = express.Router();
 const library = require('../data/Library');
 const Book = require('../modules/Book');
 const fileMulter = require('../middleware/file');
-const { route } = require('./books');
 
 router.get('/', (req, res) => {
     const {books} = library;
@@ -40,7 +39,6 @@ router.post('/',
         {name: 'book', maxCount: 1}
     ]),
     (req, res) => {
-    console.log(req.files)
     const {books} = library;
     const {title, description, authors, favorite} = req.body;
     const fileCover = req.files.cover[0].path;
