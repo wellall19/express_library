@@ -1,11 +1,11 @@
-const { v4: uuid } = require('uuid');
+const { randomUUID } = require('crypto');
 
 class Book {
     constructor(title = '', description = '', authors = '', 
         favorite = '', fileCover = '', fileName = '', 
         fileBook = ''
      ) {
-        this.id = uuid();
+        this.id = randomUUID();
         this.title = title;
         this.description = description;
         this.authors = authors;
