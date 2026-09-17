@@ -1,8 +1,8 @@
-const { v4: uuid } = require('uuid');
+const { randomUUID } = require('crypto');
 
 class User {
     constructor( mail = '' ) {
-        this.id = uuid();
+        this.id = randomUUID();
         this.mail = mail
     }
 }

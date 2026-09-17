@@ -4,6 +4,8 @@ const library = require('../data/Library');
 const Book = require('../modules/Book');
 const fileMulter = require('../middleware/file');
 
+const COUNTER_URL = process.env.COUNTER_URL || 'http://localhost:3001';
+
 router.get('/', (req, res) => {
     const {books} = library;
     res.render('books/index', {
@@ -64,7 +66,7 @@ router.post('/update/:id', (req, res) => {
     res.redirect(`/books/${id}`);
 });
 
-router.get('/:id', (req, res) => {
+router.get('/:id', async (req, res) => {
     const {books} = library;
     const {id} = req.params;
     const idx = books.findIndex(el => el.id === id);
@@ -73,9 +75,19 @@ router.get('/:id', (req, res) => {
         return res.redirect('/404');
     }
 
+    let views = 0;
+    try {
+        const response = await fetch(`${COUNTER_URL}/counter/${id}/incr`, { method: 'POST' });
+        const data = await response.json();
+        views = data.count;
+    } catch (err) {
+        console.error('Не удалось связаться с counter-service:', err.message);
+    }
+
     res.render('books/view', {
         title: "Книга",
         book: books[idx],
+        views
     });
 });
 
