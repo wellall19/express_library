@@ -1,89 +1,78 @@
 const express = require('express');
 const router = express.Router();
-const library = require('../data/Library');
-const Book = require('../modules/Book');
-const fileMulter = require('../middleware/file');
+const Books = require('../modules/Book');
 
-router.get('/', (req, res) => {
-    const {books} = library;
-    res.json(books);
-});
-
-router.get('/:id', (req, res) => {
-    const {books} = library;
-    const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-    if ( idx !== -1) {
-        res.json(books[idx]);
-    } else {
-        res.status(404);
-        res.json('Code: 404');
+router.get('/', async (req, res) => {
+    try {
+        const library = await Books.find().select('-__v');
+        res.json(library)
+    } catch (e) {
+        res.status(500).json(e)
     }
 });
 
-router.get('/:id/download', (req,res) => {
-    const {books} = library;
+router.get('/:id', async (req, res) => {
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-    if (idx !== -1) {
-        res.download(books[idx].fileBook, books[idx].fileName);
-    } else {
-        res.status(404);
-        res.json('Code: 404');
+    try {
+        const book = await Books.findById(id).select('-__v');
+        if (!book) {
+            res.status(404).json('Code: 404');
+        } else {
+            res.json(book);
+        }
+    } catch (e) {
+        res.status(500).json(e)
     }
 });
 
-router.post('/', 
-    fileMulter.fields([
-        {name: 'cover', maxCount: 1},
-        {name: 'book', maxCount: 1}
-    ]),
-    (req, res) => {
-    const {books} = library;
-    const {title, description, authors, favorite} = req.body;
-    const fileCover = req.files.cover[0].path;
-    const fileName = req.files.book[0].originalname;
-    const fileBook = req.files.book[0].path;
-
-    const newBook = new Book(title, description, authors, favorite, fileCover, fileName, fileBook);
-    books.push(newBook);
-
-    res.json(newBook);
-});
-
-router.put('/:id', (req, res) => {
-    const {books} = library;
-    const {title, description, authors, favorite} = req.body;
-    const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx !== -1) {
-        books[idx] = {
-            ...books[idx],
-            title,
-            description,
-            authors,
-            favorite,
-        };
-
-        res.json(books[idx]);
-    } else {
-        res.status(404);
-        res.json('Code: 404');
+router.post('/', async (req, res) => {
+    const {title, description, authors, favorite, fileCover, fileName} = req.body;
+    const newBook = new Books({
+        title: title,
+        description: description,
+        authors: authors,
+        favorite: favorite,
+        fileCover: fileCover,
+        fileName: fileName,
+    });
+    try {
+        await newBook.save();
+        res.json(newBook);
+    } catch (e) {
+        res.status(500).json(e);
     }
 });
 
-router.delete('/:id', (req, res) => {
-    const {books} = library;
+router.put('/:id', async (req, res) => {
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
+    const {title, description, authors, favorite, fileCover, fileName} = req.body;
+    const updatedBook = {
+        title: title,
+        description: description,
+        authors: authors,
+        favorite: favorite,
+        fileCover: fileCover,
+        fileName: fileName,
+    };
+    try {
+        const updatedBook = await Books.findByIdAndUpdate(id, updatedBook, {new: true});
+        if (!updatedBook) {
+            res.status(404).json('Code: 404');
+        } else {
+            res.json(updatedBook);
+        }
+    } catch (e) {
+        res.status(500).json(e);
+    }
+});
 
-    if (idx !== -1) {
-        books.splice(idx, 1);
+router.delete('/:id', async (req, res) => {
+    const {id} = req.params;
+    try {
+        await Books.findByIdAndDelete(id);
         res.json('ok')
-    } else {
-        res.status(404);
-        res.json('Code: 404');
+    } catch (e) {
+        res.status(500).json(e)
     }
 });
 

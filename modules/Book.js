@@ -1,19 +1,24 @@
-const { randomUUID } = require('crypto');
+const {Schema, model} = require('mongoose');
 
-class Book {
-    constructor(title = '', description = '', authors = '', 
-        favorite = '', fileCover = '', fileName = '', 
-        fileBook = ''
-     ) {
-        this.id = randomUUID();
-        this.title = title;
-        this.description = description;
-        this.authors = authors;
-        this.favorite = favorite === "true";
-        this.fileCover = fileCover;
-        this.fileName = fileName;
-        this.fileBook = fileBook;
-    }
-}
+const bookSchema = new Schema({
+    title: {
+        type: String
+    },
+    description: {
+        type: String
+    },
+    authors: {
+        type: String
+    },
+    favorite: {
+        type: String
+    },
+    fileCover: {
+        type: String
+    },
+    fileName: {
+        type: String
+    },
+});
 
-module.exports = Book;
+module.exports = model('Book', bookSchema);

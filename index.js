@@ -1,4 +1,5 @@
 const express = require('express');
+const mongoose = require('mongoose');
 const bookRouter = require('./routes/books.js');
 const bookPagesRouter = require('./routes/booksPages.js');
 const userRouter = require('./routes/user.js');
@@ -20,4 +21,16 @@ app.get('/', (req, res) => {
 app.use(errorMiddleware);
 
 const port = 3000;
-app.listen(port);
+
+async function start() {
+    try {
+        await mongoose.connect(process.env.MONGO_URL || 'mongodb://localhost:27017/mydb');
+        app.listen(port, () => {
+            console.log(`Server is running jn port${port}`);
+        })
+    } catch (e) {
+        console.log(e);
+    }
+}
+
+start();

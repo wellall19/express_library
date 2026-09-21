@@ -1,17 +1,20 @@
 const express = require('express');
 const router = express.Router();
-const library = require('../data/Library');
-const Book = require('../modules/Book');
+const Books = require('../modules/Book');
 const fileMulter = require('../middleware/file');
 
 const COUNTER_URL = process.env.COUNTER_URL || 'http://localhost:3001';
 
-router.get('/', (req, res) => {
-    const {books} = library;
-    res.render('books/index', {
+router.get('/', async (req, res) => {
+    try {
+        const library = await Books.find().select('-__v');
+        res.render('books/index', {
         title: "Список книг",
-        books: books,
-    });
+        books: library,
+        });
+    } catch (e) {
+        return res.redirect('/404')
+    } 
 });
 
 router.get('/create', (req, res) => {
@@ -21,86 +24,103 @@ router.get('/create', (req, res) => {
     });
 });
 
-router.post('/create', (req, res) => {
-    const {books} = library;
-    const {title, description, authors} = req.body;
-
-    const newBook = new Book(title, description, authors, false, "fileCover", "fileName", "fileBook");
-    books.push(newBook);
-
-    res.redirect('/books');
-});
-
-router.get('/update/:id', (req, res) => {
-    const {books} = library;
-    const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
-        return res.redirect('/404')
-    }
-
-    res.render('books/update', {
-        title: "Редактирование книги",
-        book: books[idx],
+router.post('/create', async (req, res) => {
+    const {title, description, authors, favorite, fileCover, fileName} = req.body;
+    const newBook = new Books({
+        title: title,
+        description: description,
+        authors: authors,
+        favorite: favorite,
+        fileCover: fileCover,
+        fileName: fileName,
     });
-});
-
-router.post('/update/:id', (req, res) => {
-    const {books} = library;
-    const {id} = req.params;
-    const {title, description, authors} = req.body;
-    const idx = books.findIndex(el => el.id === id);
-
-    if (idx === -1) {
+    try {
+        await newBook.save();
+        res.redirect('/books');
+    } catch (e) {
         return res.redirect('/404')
     }
+});
 
-    books[idx] = {
-        ...books[idx],
-        title,
-        description, 
-        authors,
+router.get('/update/:id', async (req, res) => {
+    const {id} = req.params;
+    try {
+        const book = await Books.findById(id);
+        if (!book) {
+            return res.redirect('/404')
+        } else {
+            res.render('books/update', {
+            title: "Редактирование книги",
+            book: book,
+        });
+        }
+    } catch (e) {
+        return res.redirect('/404')
+    }
+});
+
+router.post('/update/:id', async (req, res) => {
+    const {id} = req.params;
+    const {title, description, authors, favorite, fileCover, fileName} = req.body;
+    const newBook = {
+        title: title,
+        description: description,
+        authors: authors,
+        favorite: favorite,
+        fileCover: fileCover,
+        fileName: fileName,
     };
-
-    res.redirect(`/books/${id}`);
+    try {
+        const updatedBook = await Books.findByIdAndUpdate(id, newBook, {new: true});
+        if (!updatedBook) {
+            return res.redirect('/404')
+        } else {
+            res.redirect(`/books/${id}`);
+        }
+    } catch (e) {
+        return res.redirect('/404')
+    }
 });
 
 router.get('/:id', async (req, res) => {
-    const {books} = library;
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
-    
-    if (idx === -1) {
-        return res.redirect('/404');
-    }
-
     let views = 0;
     try {
-        const response = await fetch(`${COUNTER_URL}/counter/${id}/incr`, { method: 'POST' });
-        const data = await response.json();
-        views = data.count;
+        const book = await Books.findById(id);
+        if (!book) {
+            return res.redirect('/404')
+        } else {
+            try {
+                const response = await fetch(`${COUNTER_URL}/counter/${id}/incr`, { method: 'POST' });
+                const data = await response.json();
+                views = data.count;
+            } catch (err) {
+                console.error('Не удалось связаться с counter-service:', err.message);
+            }
+            res.render('books/view', {
+                title: "Книга",
+                book: book,
+                views
+            });
+        }
     } catch (err) {
-        console.error('Не удалось связаться с counter-service:', err.message);
+        return res.redirect('/404')
     }
-
-    res.render('books/view', {
-        title: "Книга",
-        book: books[idx],
-        views
-    });
 });
 
-router.post('/delete/:id', (req, res) => {
-    const {books} = library;
+router.post('/delete/:id', async (req, res) => {
     const {id} = req.params;
-    const idx = books.findIndex(el => el.id === id);
 
-    if (idx === -1) {
-        return res.redirect('/404');
-    }
-    books.splice(idx, 1);
-    res.redirect('/books');
+    try {
+        const book = await Books.findByIdAndDelete(id);
+        if (!book) {
+            return res.redirect('/404')
+        } else {
+            res.redirect('/books');
+        }
+    } catch (e) {
+        return res.redirect('/404')
+    } 
 });
 
 module.exports = router;
