@@ -1,10 +1,18 @@
-const { randomUUID } = require('crypto');
+const {Schema, model} = require('mongoose');
 
-class User {
-    constructor( mail = '' ) {
-        this.id = randomUUID();
-        this.mail = mail
-    }
-}
+const userSchema = new Schema({
+    username: {
+        type: String
+    },
+    displayName: {
+        type: String
+    },
+    emails: {
+        type: String
+    },
+    password: {
+        type: String
+    },
+});
 
-module.exports = User;
+module.exports = model('User', userSchema);
