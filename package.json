@@ -8,7 +8,8 @@
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
-    "dev": "nodemon --ignore counter-service index.js"
+    "dev": "nodemon --ignore counter-service index.js",
+    "build": "tsc"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",

@@ -1,3 +1,4 @@
+require('reflect-metadata');
 const express = require('express');
 const mongoose = require('mongoose');
 const bookRouter = require('./routes/books.js');
